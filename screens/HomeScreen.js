@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,89 +9,108 @@ import {
   SafeAreaView,
   Platform,
   ScrollView,
+  TextInput,
+  KeyboardAvoidingView,
+  Keyboard,
+  Animated,
+  Easing,
+  Alert,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
+import { SwipeListView } from 'react-native-swipe-list-view';
+import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from '../supabase';
 
 const HomeScreen = ({navigation}) => {
   // Static food data
-  const fridgeItems = [
-    {
-      id: '1',
-      name: 'Milk',
-      category: 'Dairy',
-      quantity: '4',
-      image: 'https://assets.shop.loblaws.ca/products/20149754/b1/en/angle/20149754_angle_a01_@2.png',
-      expirationDate: '2025-01-25',
-      storage: 'Keep refrigerated at 4°C',
-      nutritionalFacts: {
-        calories: 150,
-        protein: 8,
-        fats: 5,
-        carbs: 12,
-      },
-      purchaseDate: '2025-01-18',
-      brand: 'Brand A Dairy',
-      healthBenefits: 'Rich in calcium and essential for strong bones.',
-      recipes: ['Milkshake', 'Pancakes', 'Creamy Pasta'],
-      allergens: ['Lactose'],
-    },
-    {
-      id: '2',
-      name: 'Bananas',
-      category: 'Fruit',
-      quantity: '10',
-      image: 'https://cdn11.bigcommerce.com/s-1ly92eod7l/images/stencil/1280x1280/products/647/790/Product_Produce_Banana__90431.1700494209.jpg?c=1&imbypass=on',
-      expirationDate: '2025-01-22',
-      storage: 'Store at room temperature. Do not refrigerate until ripe.',
-      nutritionalFacts: {
-        calories: 105,
-        protein: 1.3,
-        fats: 0.3,
-        carbs: 27,
-      },
-      purchaseDate: '2025-01-15',
-      brand: 'Tropical Farms',
-      healthBenefits: 'Great source of potassium and energy.',
-      recipes: ['Banana Bread', 'Smoothies', 'Banana Pancakes'],
-      allergens: [],
-    },
-    {
-      id: '3',
-      name: 'Chicken',
-      category: 'Meat',
-      quantity: '3',
-      image: 'https://www.simplyrecipes.com/thmb/Sw2rWO2l615LjOnmUyDIWjAMDKg=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/__opt__aboutcom__coeus__resources__content_migration__simply_recipes__uploads__2007__04__honey-glazed-roast-chicken-horiz-a-1800-2057270028084ff2bdb54fcb0f2d3227.jpg',
-      expirationDate: '2025-01-20',
-      storage: 'Keep frozen or refrigerated at 4°C.',
-      nutritionalFacts: {
-        calories: 239,
-        protein: 27,
-        fats: 14,
-        carbs: 0,
-      },
-      purchaseDate: '2025-01-17',
-      brand: 'Fresh Organic Farms',
-      healthBenefits: 'High in protein, essential for muscle growth.',
-      recipes: ['Grilled Chicken', 'Chicken Soup', 'Chicken Salad'],
-      allergens: [],
-    },
-  ];
-  
-
+  const [fridgeItems, setFridgeItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   // Category colors
   const categoryColors = {
     Dairy: '#a3e635',
     Fruit: '#06b6d4',
     Meat: '#fb923c',
+    Grains: '#fde68a',
+    Vegetables: '#34d399',
+    Seafood: '#fda4af',
+    Sides: '#fde68a',
+    Beverages: '#fde68a',
+    Snacks: '#fde68a',
+    Desserts: '#fde68a',
+    Condiments: '#fde68a',
+    Miscellaneous: '#fde68a',
+    Unknown: '#fde68a',
+    Other: '#fde68a',
+    Canned_Goods: '#fde68a',
+    Frozen_Foods: '#fde68a',
+    Spices: '#fde68a',
   };
 
+   // Fetch items from Supabase
+   useEffect(() => {
+    const fetchItems = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('fridge_items')
+        .select('*')
+        .order('created_at', { ascending: false });
+  
+      if (error) {
+        console.error('Error fetching fridge items:', error);
+      } else {
+        setFridgeItems(data);
+      }
+      setLoading(false);
+    };
+  
+    fetchItems(); // Fetch items on initial load
+  
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchItems(); // Fetch items every time the screen is focused
+    });
+  
+    return unsubscribe;
+  }, [navigation]);
+  
+  
+
+
+
+  // Modal function 
+  const toggleModal = (visible) => {
+    if (visible) {
+      setModalVisible(true);
+      Animated.timing(slideAnim, {
+        toValue: -30, // Moves modal into view
+        duration: 300,
+        easing: Easing.out(Easing.exp), // Smooth transition
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 300, // Moves modal out of view
+        duration: 300,
+        easing: Easing.in(Easing.exp),
+        useNativeDriver: true,
+      }).start(() => setModalVisible(false)); // Hide modal AFTER animation
+    }
+  };
+  
   // State to track selected filter
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const slideAnim = useRef(new Animated.Value(300)).current;
+  const [ModalVisible, setModalVisible] = useState(false);
 
+
+  
+  
   // Filtered items based on the selected filter
   const filteredItems =
-    selectedFilter === 'All'
-      ? fridgeItems
-      : fridgeItems.filter((item) => item.category === selectedFilter);
+  selectedFilter === 'All'
+    ? fridgeItems
+    : fridgeItems.filter((item) => item.category === selectedFilter);
 
   // Render each food item
   const renderFridgeItem = ({ item }) => (
@@ -100,9 +119,9 @@ const HomeScreen = ({navigation}) => {
         styles.itemContainer,
         { backgroundColor: categoryColors[item.category] || '#f8f8f8' },
       ]}
-      onPress={() => navigation.navigate('ItemDetails', { item })}
+      onPress={() => navigation.navigate('ItemDetails', { item })} // Navigate to ItemDetailsScreen
     >
-      <Image source={{ uri: item.image }} style={styles.itemImage} />
+      <Image source={{ uri: item.image_url }} style={styles.itemImage} />
       <View style={styles.itemDetails}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemCategory}>{item.category}</Text>
@@ -111,7 +130,58 @@ const HomeScreen = ({navigation}) => {
     </TouchableOpacity>
   );
 
-  //  <Text style={styles.addButtonText}>+</Text>
+  const renderHiddenItem = ({ item }) => (
+    <View style={styles.hiddenContainer}>
+      {/* Update Button */}
+      <TouchableOpacity
+        style={styles.updateButton}
+        onPress={() => Alert.alert("Update", "Update feature coming soon!")}
+      >
+        <Text style={styles.updateButtonText}>Update</Text>
+      </TouchableOpacity>
+  
+      {/* Delete Button */}
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => deleteItem(item.id)}
+      >
+        <Text style={styles.deleteButtonText}>Delete</Text>
+      </TouchableOpacity>
+    </View>
+  );  
+  
+  const deleteItem = async (id) => {
+    Alert.alert(
+      "Delete Item",
+      "Are you sure you want to delete this item?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            const { error } = await supabase
+              .from('fridge_items')
+              .delete()
+              .eq('id', id);
+  
+            if (error) {
+              console.error("Error deleting item:", error);
+              Alert.alert("Error", "Could not delete item. Please try again.");
+            } else {
+              setFridgeItems(fridgeItems.filter(item => item.id !== id));
+            }
+          },
+          style: "destructive",
+        },
+      ]
+    );
+  };  
+  
+
+  
   
 
   return (
@@ -124,7 +194,7 @@ const HomeScreen = ({navigation}) => {
         </Text>
         <TouchableOpacity
           style={styles.addHeaderButton}
-          onPress={() => console.log('Add item functionality')}
+          onPress={() => setModalVisible(true)}
         >
           <Text style={styles.addHeaderButtonText}>+</Text>
         </TouchableOpacity>
@@ -158,13 +228,51 @@ const HomeScreen = ({navigation}) => {
         ))}
       </ScrollView>
 
+        {loading ? (
+      <ActivityIndicator size="large" color="#000" />
+    ) : (
+      <SwipeListView
+      data={filteredItems}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={renderFridgeItem}
+      renderHiddenItem={renderHiddenItem}
+      rightOpenValue={-150} // Increase swipe distance to fit both buttons
+      disableRightSwipe
+      stopRightSwipe={-150} // Prevent over-swiping
+      contentContainerStyle={styles.listContainer}
+    />    
+    )}
+
+
       {/* Food Section */}
-      <FlatList
-        data={filteredItems}
-        renderItem={renderFridgeItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
+      <Modal transparent={true} visible={ModalVisible} animationType="none">
+        <View style={styles.modalContainer}>
+          <Animated.View style={[styles.modalContent, { transform: [{ translateY: slideAnim }] }]}>
+            <Text style={styles.modalTitle}>Add an Item</Text>
+
+            <TouchableOpacity style={styles.optionButton}>
+              <Text style={styles.optionText}>📸 Barcode Scan</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.optionButton}>
+              <Text style={styles.optionText}>🧾 Receipt Scan</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => {
+              setModalVisible(false);
+              navigation.navigate('ManualInput');
+            }}
+          >
+            <Text style={styles.optionText}>✍ Manual Input</Text>
+          </TouchableOpacity>
+            <TouchableOpacity style={styles.closeButton} onPress={() => toggleModal(false)}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
+
+
     </SafeAreaView>
   );
 };
@@ -210,7 +318,7 @@ const styles = StyleSheet.create({
   filterBar: {
     marginBottom: 10,
     paddingHorizontal: 5,
-    paddingBottom: 10,
+    paddingBottom: 30,
     height: 80, // Adjust height as needed
     flexDirection: 'row',
   },
@@ -291,6 +399,93 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end', // Ensures it appears at the bottom
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark overlay
+  },
+  modalContent: {
+    width: '100%',
+    height: '80%', // Controls modal size
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5, // Android shadow
+  },  
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  optionButton: {
+    padding: 15,
+    width: '100%',
+    alignItems: 'center',
+  },
+  optionText: {
+    fontSize: 18,
+  },
+  closeButton: {
+    marginTop: 10,
+    padding: 10,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: 'red',
+  },  
+  hiddenContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end', // Align buttons to the right
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    marginVertical: 7, // Align with item padding
+    borderRadius: 20,
+    height: 75, // Match item height
+  },
+  
+  updateButton: {
+    backgroundColor: '#4CAF50', // Green for Update
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 75, // Same width as delete button
+    height: '88%',
+    borderTopLeftRadius: 15,
+    borderBottomLeftRadius: 15,
+    position: 'absolute',
+    right: 85, // Place it to the left of delete button
+  },
+  
+  updateButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  
+  deleteButton: {
+    backgroundColor: '#FF3B30', // Red for Delete
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 75,
+    height: '88%',
+    borderTopRightRadius: 15,
+    borderBottomRightRadius: 15,
+    position: 'absolute',
+    right: 10,
+  },
+  
+  deleteButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },  
 });
 
 export default HomeScreen;
+

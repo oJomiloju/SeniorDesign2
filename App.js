@@ -11,6 +11,7 @@ import HomeScreen from './screens/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import SmartSuggestionsScreen from './screens/SmartSuggestionsScreen';
 import ItemDetailsScreen from './screens/ItemDetailsScreen'; // Import the ItemDetailsScreen
+import ManualInputScreen from './screens/ManualInputScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -60,7 +61,6 @@ function TabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Suggestions" component={SmartSuggestionsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
-
     </Tab.Navigator>
   );
 }
@@ -88,6 +88,11 @@ export default function App() {
         <Stack.Screen
           name="ItemDetails"
           component={ItemDetailsScreen} // Add ItemDetailsScreen here
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ManualInput"
+          component={ManualInputScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

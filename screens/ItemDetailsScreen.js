@@ -8,17 +8,14 @@ const ItemDetailsScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Icon name="arrow-back" size={24} color="#FFF" />
       </TouchableOpacity>
 
       <ScrollView>
         {/* Image Section */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.image} />
+          <Image source={{ uri: item.image_url }} style={styles.image} /> 
           <View style={styles.imageOverlay}>
             <Text style={styles.itemName}>{item.name}</Text>
           </View>
@@ -26,7 +23,6 @@ const ItemDetailsScreen = ({ route, navigation }) => {
 
         {/* Details Section */}
         <View style={styles.detailsContainer}>
-          {/* Item Details */}
           <View style={styles.card}>
             <View style={[styles.bubbleTitle, { backgroundColor: '#E0F7FA' }]}>
               <Text style={styles.bubbleText}>Item Details</Text>
@@ -38,31 +34,33 @@ const ItemDetailsScreen = ({ route, navigation }) => {
               <Text style={styles.label}>Quantity:</Text> {item.quantity}
             </Text>
             <Text style={styles.detail}>
-              <Text style={styles.label}>Expires on:</Text> {item.expirationDate}
+              <Text style={styles.label}>Expires on:</Text> {item.expiration_date || 'Unknown'}
             </Text>
             <Text style={styles.detail}>
-              <Text style={styles.label}>Storage:</Text> {item.storage}
+              <Text style={styles.label}>Storage:</Text> {item.storage || 'Not specified'}
             </Text>
           </View>
 
-          {/* Nutritional Facts */}
-          <View style={styles.card}>
-            <View style={[styles.bubbleTitle, { backgroundColor: '#FFF3E0' }]}>
-              <Text style={styles.bubbleText}>Nutritional Facts</Text>
+          {/* Nutritional Facts (Ensure Data Exists) */}
+          {item.nutritionalFacts && (
+            <View style={styles.card}>
+              <View style={[styles.bubbleTitle, { backgroundColor: '#FFF3E0' }]}>
+                <Text style={styles.bubbleText}>Nutritional Facts</Text>
+              </View>
+              <Text style={styles.detail}>
+                <Text style={styles.label}>Calories:</Text> {item.nutritionalFacts.calories || 'N/A'}
+              </Text>
+              <Text style={styles.detail}>
+                <Text style={styles.label}>Protein:</Text> {item.nutritionalFacts.protein || 'N/A'}g
+              </Text>
+              <Text style={styles.detail}>
+                <Text style={styles.label}>Fats:</Text> {item.nutritionalFacts.fats || 'N/A'}g
+              </Text>
+              <Text style={styles.detail}>
+                <Text style={styles.label}>Carbs:</Text> {item.nutritionalFacts.carbs || 'N/A'}g
+              </Text>
             </View>
-            <Text style={styles.detail}>
-              <Text style={styles.label}>Calories:</Text> {item.nutritionalFacts.calories}
-            </Text>
-            <Text style={styles.detail}>
-              <Text style={styles.label}>Protein:</Text> {item.nutritionalFacts.protein}g
-            </Text>
-            <Text style={styles.detail}>
-              <Text style={styles.label}>Fats:</Text> {item.nutritionalFacts.fats}g
-            </Text>
-            <Text style={styles.detail}>
-              <Text style={styles.label}>Carbs:</Text> {item.nutritionalFacts.carbs}g
-            </Text>
-          </View>
+          )}
 
           {/* Additional Info */}
           <View style={styles.card}>
@@ -70,30 +68,32 @@ const ItemDetailsScreen = ({ route, navigation }) => {
               <Text style={styles.bubbleText}>Additional Info</Text>
             </View>
             <Text style={styles.detail}>
-              <Text style={styles.label}>Purchase Date:</Text> {item.purchaseDate}
+              <Text style={styles.label}>Purchase Date:</Text> {item.purchase_date || 'Unknown'}
             </Text>
             <Text style={styles.detail}>
-              <Text style={styles.label}>Brand:</Text> {item.brand}
+              <Text style={styles.label}>Brand:</Text> {item.brand || 'Unknown'}
             </Text>
             <Text style={styles.detail}>
-              <Text style={styles.label}>Health Benefits:</Text> {item.healthBenefits}
+              <Text style={styles.label}>Health Benefits:</Text> {item.health_benefits || 'No data'}
             </Text>
           </View>
 
           {/* Recipes */}
-          <View style={styles.card}>
-            <View style={[styles.bubbleTitle, { backgroundColor: '#FCE4EC' }]}>
-              <Text style={styles.bubbleText}>Recipes</Text>
+          {item.recipes && item.recipes.length > 0 && (
+            <View style={styles.card}>
+              <View style={[styles.bubbleTitle, { backgroundColor: '#FCE4EC' }]}>
+                <Text style={styles.bubbleText}>Recipes</Text>
+              </View>
+              {item.recipes.map((recipe, index) => (
+                <Text key={index} style={styles.detail}>
+                  - {recipe}
+                </Text>
+              ))}
             </View>
-            {item.recipes.map((recipe, index) => (
-              <Text key={index} style={styles.detail}>
-                - {recipe}
-              </Text>
-            ))}
-          </View>
+          )}
 
           {/* Allergens */}
-          {item.allergens.length > 0 && (
+          {item.allergens && item.allergens.length > 0 && (
             <View style={styles.card}>
               <View style={[styles.bubbleTitle, { backgroundColor: '#FFEBEE' }]}>
                 <Text style={styles.bubbleText}>Allergens</Text>
@@ -110,6 +110,7 @@ const ItemDetailsScreen = ({ route, navigation }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

@@ -11,29 +11,32 @@ import {
   Animated,
   KeyboardAvoidingView,
   ScrollView,
+  Alert,
 } from 'react-native';
+import { supabase } from '../supabase'; // Ensure you have the Supabase client setup
 
 const LoginSignupScreen = ({ navigation }) => {
-  const [isLogin, setIsLogin] = useState(true); // Added this line to initialize isLogin state
-  const [isKeyboardVisible, setKeyboardVisible] = useState(false); // Track keyboard visibility
-  const slideAnim = useRef(new Animated.Value(0)).current; // Animation for sliding the screen
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Listener for keyboard show
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
       setKeyboardVisible(true);
       Animated.timing(slideAnim, {
-        toValue: -50, // Slide up by 150px (adjust as needed)
+        toValue: -50,
         duration: 300,
         useNativeDriver: true,
       }).start();
     });
 
-    // Listener for keyboard hide
     const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
       setKeyboardVisible(false);
       Animated.timing(slideAnim, {
-        toValue: 0, // Reset position
+        toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
@@ -45,6 +48,49 @@ const LoginSignupScreen = ({ navigation }) => {
     };
   }, [slideAnim]);
 
+  const handleSignup = async () => {
+    if (!email || !password || !fullName) {
+      Alert.alert('Error', 'All fields are required!');
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      Alert.alert('Success', 'Account created successfully!');
+      navigation.navigate('MainApp');
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Email and password are required!');
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      Alert.alert('Success', 'Logged in successfully!');
+      navigation.navigate('MainApp');
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -54,13 +100,11 @@ const LoginSignupScreen = ({ navigation }) => {
         <Animated.View
           style={[
             styles.contentContainer,
-            { transform: [{ translateY: slideAnim }] }, // Apply sliding animation
+            { transform: [{ translateY: slideAnim }] },
           ]}
         >
-          {/* Title */}
           <Text style={styles.title}>{isLogin ? 'Login' : 'Sign Up'}</Text>
 
-          {/* Informative Statistics Section */}
           {!isKeyboardVisible && (
             <View style={styles.statsContainer}>
               <View
@@ -99,12 +143,13 @@ const LoginSignupScreen = ({ navigation }) => {
             </View>
           )}
 
-          {/* Input Fields */}
           {!isLogin && (
             <TextInput
               style={styles.input}
               placeholder="Full Name"
               placeholderTextColor="#999"
+              value={fullName}
+              onChangeText={setFullName}
             />
           )}
           <TextInput
@@ -113,25 +158,25 @@ const LoginSignupScreen = ({ navigation }) => {
             placeholderTextColor="#999"
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
           <TextInput
             style={styles.input}
             placeholder="Password"
             placeholderTextColor="#999"
             secureTextEntry
+            value={password}
+            onChangeText={setPassword}
           />
 
-          {/* Action Button */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate('MainApp')}
+            onPress={isLogin ? handleLogin : handleSignup}
           >
             <Text style={styles.buttonText}>{isLogin ? 'Login' : 'Sign Up'}</Text>
           </TouchableOpacity>
 
-
-
-          {/* Toggle Option */}
           <TouchableOpacity
             onPress={() => setIsLogin(!isLogin)}
             style={styles.toggleContainer}
