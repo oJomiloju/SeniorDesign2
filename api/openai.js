@@ -1,5 +1,5 @@
 import axios from "axios";
-const OPENAI_API_KEY = "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"; 
+import {OPENAI_API_KEY} from "@env"
 
 const callOpenAI = async (prompt) => {
   try {
