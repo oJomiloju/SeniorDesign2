@@ -12,6 +12,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import SmartSuggestionsScreen from './screens/SmartSuggestionsScreen';
 import ItemDetailsScreen from './screens/ItemDetailsScreen'; // Import the ItemDetailsScreen
 import ManualInputScreen from './screens/ManualInputScreen';
+import BarcodeScannerScreen from './screens/BarcodeScannerScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -93,6 +94,11 @@ export default function App() {
         <Stack.Screen
           name="ManualInput"
           component={ManualInputScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="BarcodeScanner"
+          component={BarcodeScannerScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

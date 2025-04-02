@@ -249,12 +249,17 @@ const HomeScreen = ({navigation}) => {
         <View style={styles.modalContainer}>
           <Animated.View style={[styles.modalContent, { transform: [{ translateY: slideAnim }] }]}>
             <Text style={styles.modalTitle}>Add an Item</Text>
-
+            <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => {
+              setModalVisible(false);
+              navigation.navigate('BarcodeScanner');
+            }}
+          >
+            <Text style={styles.optionText}>📸 Barcode Scan</Text>
+          </TouchableOpacity>
             <TouchableOpacity style={styles.optionButton}>
-              <Text style={styles.optionText}>📸 Barcode Scan</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton}>
-              <Text style={styles.optionText}>🧾 Receipt Scan</Text>
+              <Text style={styles.optionTiext}>🧾 Receipt Scan</Text>
             </TouchableOpacity>
             <TouchableOpacity
             style={styles.optionButton}
